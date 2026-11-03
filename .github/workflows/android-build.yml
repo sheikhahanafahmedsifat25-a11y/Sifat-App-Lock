@@ -1,42 +1,59 @@
 name: Build Sifat App Lock APK
 
 on:
-  workflow_dispatch:
+workflow_dispatch:
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+build:
+runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+steps:
+  - name: Checkout project
+    uses: actions/checkout@v4
 
-      - name: Extract project
-        run: |
-          unzip -o sifat-app-lock.zip -d project
+  - name: Extract Android project
+    run: |
+      unzip -o sifat-app-lock.zip -d project
 
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
+  - name: Setup Java
+    uses: actions/setup-java@v4
+    with:
+      distribution: temurin
+      java-version: '17'
 
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '9.3.1'
+  - name: Setup Gradle
+    uses: gradle/actions/setup-gradle@v4
+    with:
+      gradle-version: '9.3.1'
 
-      - name: Build APK
-        run: |
-          PROJECT_DIR=$(find project -type f \( -name settings.gradle.kts -o -name settings.gradle \) -printf '%h\n' | head -n 1)
-          if [ -z "$PROJECT_DIR" ]; then
-            echo "Gradle project not found in ZIP"
-            exit 1
-          fi
-          gradle -p "$PROJECT_DIR" assembleDebug
+  - name: Find project and generate debug keystore
+    run: |
+      PROJECT_DIR=$(find project -type f \( -name settings.gradle.kts -o -name settings.gradle \) -printf '%h\n' | head -n 1)
 
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: Sifat-App-Lock-APK
-          path: project/**/build/outputs/apk/debug/*.apk
+      if [ -z "$PROJECT_DIR" ]; then
+        echo "Gradle project not found in ZIP"
+        exit 1
+      fi
+
+      echo "PROJECT_DIR=$PROJECT_DIR" >> $GITHUB_ENV
+
+      keytool -genkeypair \
+        -v \
+        -keystore "$PROJECT_DIR/debug.keystore" \
+        -storepass android \
+        -keypass android \
+        -alias androiddebugkey \
+        -keyalg RSA \
+        -keysize 2048 \
+        -validity 10000 \
+        -dname "CN=Android Debug,O=Android,C=US"
+
+  - name: Build APK
+    run: |
+      gradle -p "$PROJECT_DIR" assembleDebug
+
+  - name: Upload APK
+    uses: actions/upload-artifact@v4
+    with:
+      name: Sifat-App-Lock-APK
+      path: project/**/build/outputs/apk/debug/*.apk
