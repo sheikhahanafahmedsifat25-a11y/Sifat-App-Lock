@@ -13,7 +13,7 @@ jobs:
 
       - name: Extract Android project
         run: |
-          unzip -o Sifat-App-Lock.zip -d project
+          unzip -o sifat-app-lock.zip -d project
           ls -la project
 
       - name: Set up JDK
