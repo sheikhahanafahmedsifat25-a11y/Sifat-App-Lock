@@ -8,15 +8,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout project
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Extract Android project
+      - name: Extract project
         run: |
           unzip -o sifat-app-lock.zip -d project
-          ls -la project
 
-      - name: Set up JDK
+      - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -24,13 +23,17 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.3.1'
 
       - name: Build APK
         run: |
-          cd project
-          find . -name gradlew -type f
-          chmod +x gradlew
-          ./gradlew assembleDebug
+          PROJECT_DIR=$(find project -type f \( -name settings.gradle.kts -o -name settings.gradle \) -printf '%h\n' | head -n 1)
+          if [ -z "$PROJECT_DIR" ]; then
+            echo "Gradle project not found in ZIP"
+            exit 1
+          fi
+          gradle -p "$PROJECT_DIR" assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
