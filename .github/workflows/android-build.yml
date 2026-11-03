@@ -35,7 +35,7 @@ steps:
         exit 1
       fi
 
-      echo "PROJECT_DIR=$PROJECT_DIR" >> $GITHUB_ENV
+      echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
 
       keytool -genkeypair \
         -v \
